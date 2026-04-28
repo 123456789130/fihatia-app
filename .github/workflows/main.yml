@@ -1,7 +1,7 @@
 name: Build Android APK
 on:
   push:
-    branches: [ master ] # Cambiado de main a master
+    branches: [ master ] 
 jobs:
   build:
     runs-on: ubuntu-latest
