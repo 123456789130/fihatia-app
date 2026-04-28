@@ -1,0 +1,60 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: # Permite ejecutar la acción manualmente desde GitHub
+
+jobs:
+  build:
+    name: Generar APK de Capacitor
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📦 Descargar código
+        uses: actions/checkout@v4
+
+      - name: 🟢 Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: ☕ Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: 📥 Instalar dependencias web
+        run: npm install
+
+      - name: 🏗️ Construir la app web (Vite)
+        run: npm run build
+
+      - name: 📱 Preparar Capacitor (Android)
+        run: |
+          # Aseguramos que capacitor y android estén instalados localmente para la action
+          npm install @capacitor/core @capacitor/android
+          npm install -D @capacitor/cli
+          
+          # Si no existe la carpeta android, la inicializamos
+          if [ ! -d "android" ]; then
+            npx cap init fihatia-web com.fihatia.app --web-dir dist
+            npx cap add android
+          else
+            npx cap sync android
+          fi
+
+      - name: 🔨 Compilar APK en Android Studio (Gradle)
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: 📤 Subir APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FIHATIA-Android-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
